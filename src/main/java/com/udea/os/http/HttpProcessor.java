@@ -3,6 +3,8 @@ package com.udea.os.http;
 import com.udea.os.config.Method;
 import com.udea.os.config.Properties;
 import com.udea.os.config.PropertiesManager;
+import com.udea.os.config.StatusCode;
+import com.udea.os.dto.Request;
 
 import java.io.*;
 import java.net.Socket;
@@ -21,128 +23,109 @@ public class HttpProcessor implements Runnable {
 
     @Override
     public void run() {
-        BufferedReader in = null;
+        BufferedReader input = null;
         PrintWriter out = null;
         BufferedOutputStream dataOut = null;
-        String fileRequested = null;
 
         try {
-            // we read characters from the client via input stream on the socket
-            in = new BufferedReader(new InputStreamReader(connect.getInputStream()));
-            String input = in.readLine();
+            input = getInput();
+            Request request = getRequest(input);
             // we get character output stream to client (for headers)
             out = new PrintWriter(connect.getOutputStream());
             // get binary output stream to client (for requested data)
             dataOut = new BufferedOutputStream(connect.getOutputStream());
 
-            // get first line of the request from the client
-
-            System.out.println("input: " + input);
-            // we parse the request with a string tokenizer
-            StringTokenizer parse = new StringTokenizer(input);
-            String method = parse.nextToken().toUpperCase(); // we get the HTTP method of the client
-            // we get file requested
-            fileRequested = parse.nextToken().toLowerCase();
-
-            System.out.println("filerequest: " + fileRequested);
-            System.out.println("parse: " + parse);
-
-            // we support only GET and HEAD methods, we check
-            if (!method.equals(Method.GET.name()) && !method.equals(Method.HEAD.name())) {
-//                if (verbose) {
-//                    System.out.println("501 Not Implemented : " + method + " method.");
-//                }
-
-                // we return the not supported file to the client
-                File file = new File(properties.getWebRoot(), properties.getMethodNotSupperted());
-                int fileLength = (int) file.length();
-                String contentMimeType = "text/html";
-                //read content to return to client
-                byte[] fileData = readFileData(file, fileLength);
-
-                // we send HTTP Headers with data to client
-                out.println("HTTP/1.1 501 Not Implemented");
-                out.println("Server: JttpServer: 1.0.0");
-                out.println("Date: " + new Date());
-                out.println("Content-type: " + contentMimeType);
-                out.println("Content-length: " + fileLength);
-                out.println(); // blank line between headers and content, very important !
-                out.flush(); // flush character output stream buffer
-                // file
-                dataOut.write(fileData, 0, fileLength);
-                dataOut.flush();
-
+            if (!request.getMethod().equals(Method.GET.name()) && !request.getMethod().equals(Method.HEAD.name())) {
+                serverError(out, dataOut);
             } else {
-
-                // GET or HEAD method
-                if (fileRequested.endsWith("/")) {
-                    fileRequested += properties.getDefaultFile();
-                }
-
-                File file = new File(properties.getWebRoot(), fileRequested);
-                int fileLength = (int) file.length();
-                String content = getContentType(fileRequested);
-
-                if (method.equals("GET")) { // GET method so we return content
-                    byte[] fileData = readFileData(file, fileLength);
-
-                    // send HTTP Headers
-                    out.println("HTTP/1.1 200 OK");
-                    out.println("Server: JttpServer: 1.0.0");
-                    out.println("Date: " + new Date());
-                    out.println("Content-type: " + content);
-                    out.println("Content-length: " + fileLength);
-                    out.println(); // blank line between headers and content, very important !
-                    out.flush(); // flush character output stream buffer
-
-                    dataOut.write(fileData, 0, fileLength);
-                    dataOut.flush();
-                }
-
-//                if (verbose) {
-//                    System.out.println("File " + fileRequested + " of type " + content + " returned");
-//                }
-
+                validatePath(request);
+                successResponse(out, dataOut, request);
             }
-
         } catch (FileNotFoundException fnfe) {
             try {
-                fileNotFound(out, dataOut, fileRequested);
+                badRequest(out, dataOut);
             } catch (IOException ioe) {
                 System.err.println("Error with file not found exception : " + ioe.getMessage());
             }
-
         } catch (IOException ioe) {
             System.err.println("Server error : " + ioe);
         } finally {
             try {
-                in.close();
+                input.close();
                 out.close();
                 dataOut.close();
                 connect.close(); // we close socket connection
             } catch (Exception e) {
                 System.err.println("Error closing stream : " + e.getMessage());
             }
-
-//            if (verbose) {
-//                System.out.println("Connection closed.\n");
-//            }
         }
     }
 
-    // return supported MIME Types
-    private String getContentType(String fileRequested) {
-        System.out.println("file mime: " + fileRequested);
-        String mimeType = getMimeType(fileRequested);
-        System.out.println("MIME: " + mimeType);
-        return mimeType;
+    private void successResponse(PrintWriter out, BufferedOutputStream dataOut, Request request) throws IOException {
+        File file = new File(properties.getWebRoot(), request.getPath());
+        int fileLength = (int) file.length();
+        String content = getContentType(request.getPath());
+        if (request.getMethod().equals("GET")) {
+            byte[] fileData = readFileData(file, fileLength);
+            sendHttpHeaders(out, dataOut, fileLength, content, fileData, StatusCode.HTTP_200.getStatus());
+        }
+    }
 
+    private void badRequest(PrintWriter out, BufferedOutputStream dataOut) throws IOException {
+        File file = new File(properties.getWebRoot(), properties.getFileNotFound());
+        int fileLength = (int) file.length();
+        String content = getMimeType(".htm");
+        byte[] fileData = readFileData(file, fileLength);
+        sendHttpHeaders(out, dataOut, fileLength, content, fileData, StatusCode.HTTP_400.getStatus());
+    }
+
+    private void serverError(PrintWriter out, BufferedOutputStream dataOut) throws IOException {
+        File file = new File(properties.getWebRoot(), properties.getMethodNotSupperted());
+        int fileLength = (int) file.length();
+        String contentMimeType = getMimeType(".htm");
+        byte[] fileData = readFileData(file, fileLength);
+        sendHttpHeaders(out, dataOut, fileLength, contentMimeType, fileData, StatusCode.HTTP_500.getStatus());
+    }
+
+    private void sendHttpHeaders(PrintWriter out, BufferedOutputStream dataOut, int fileLength, String content, byte[] fileData, String response) throws IOException {
+        out.println(response);
+        out.println("Server: JGKServer: 1.0.0");
+        out.println("Date: " + new Date());
+        out.println("Content-type: " + content);
+        out.println("Content-length: " + fileLength);
+        out.println();
+        out.flush();
+        dataOut.write(fileData, 0, fileLength);
+        dataOut.flush();
+    }
+
+    private void validatePath(Request request) {
+        if (request.getPath().endsWith("/")) {
+            request.setPath(request.getPath().concat(properties.getDefaultFile()));
+        }
+    }
+
+    private BufferedReader getInput() throws IOException {
+        // we read characters from the client via input stream on the socket
+        return new BufferedReader(new InputStreamReader(connect.getInputStream()));
+    }
+
+    private Request getRequest(BufferedReader input) throws IOException {
+        // get first line of the request from the client
+        String requestMethod = input.readLine();
+        StringTokenizer parse = new StringTokenizer(requestMethod);
+        String method = parse.nextToken().toUpperCase();
+        String fileRequested = parse.nextToken().toLowerCase();
+        return new Request(method, fileRequested);
+    }
+
+    private String getContentType(String fileRequested) {
+        return getMimeType(fileRequested);
     }
 
     private byte[] readFileData(File file, int fileLength) throws IOException {
         FileInputStream fileIn = null;
         byte[] fileData = new byte[fileLength];
-
         try {
             fileIn = new FileInputStream(file);
             fileIn.read(fileData);
@@ -150,30 +133,6 @@ public class HttpProcessor implements Runnable {
             if (fileIn != null)
                 fileIn.close();
         }
-
         return fileData;
-    }
-
-
-    private void fileNotFound(PrintWriter out, OutputStream dataOut, String fileRequested) throws IOException {
-        File file = new File(properties.getWebRoot(), properties.getFileNotFound());
-        int fileLength = (int) file.length();
-        String content = "text/html";
-        byte[] fileData = readFileData(file, fileLength);
-
-        out.println("HTTP/1.1 404 File Not Found");
-        out.println("Server: Java HTTP Server from SSaurel : 1.0");
-        out.println("Date: " + new Date());
-        out.println("Content-type: " + content);
-        out.println("Content-length: " + fileLength);
-        out.println(); // blank line between headers and content, very important !
-        out.flush(); // flush character output stream buffer
-
-        dataOut.write(fileData, 0, fileLength);
-        dataOut.flush();
-
-//        if (verbose) {
-//            System.out.println("File " + fileRequested + " not found");
-//        }
     }
 }
