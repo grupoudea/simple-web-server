@@ -29,12 +29,10 @@ public class HttpProcessor implements Runnable {
 
         try {
             input = getInput();
-            Request request = getRequest(input);
-            // we get character output stream to client (for headers)
             out = new PrintWriter(connect.getOutputStream());
-            // get binary output stream to client (for requested data)
             dataOut = new BufferedOutputStream(connect.getOutputStream());
 
+            Request request = getRequest(input);
             if (!request.getMethod().equals(Method.GET.name()) && !request.getMethod().equals(Method.HEAD.name())) {
                 serverError(out, dataOut);
             } else {
@@ -54,10 +52,11 @@ public class HttpProcessor implements Runnable {
                 input.close();
                 out.close();
                 dataOut.close();
-                connect.close(); // we close socket connection
+                connect.close();
             } catch (Exception e) {
                 System.err.println("Error closing stream : " + e.getMessage());
             }
+            System.out.println("\n");
         }
     }
 
@@ -89,8 +88,10 @@ public class HttpProcessor implements Runnable {
 
     private void sendHttpHeaders(PrintWriter out, BufferedOutputStream dataOut, int fileLength, String content, byte[] fileData, String response) throws IOException {
         out.println(response);
+        show("Status code", response);
         out.println("Server: JGKServer: 1.0.0");
         out.println("Date: " + new Date());
+        show("Time", new Date().toString());
         out.println("Content-type: " + content);
         out.println("Content-length: " + fileLength);
         out.println();
@@ -102,24 +103,27 @@ public class HttpProcessor implements Runnable {
     private void validatePath(Request request) {
         if (request.getPath().endsWith("/")) {
             request.setPath(request.getPath().concat(properties.getDefaultFile()));
+        } else {
+            show("Incorrect path", request.getPath());
         }
     }
 
     private BufferedReader getInput() throws IOException {
-        // we read characters from the client via input stream on the socket
         return new BufferedReader(new InputStreamReader(connect.getInputStream()));
     }
 
     private Request getRequest(BufferedReader input) throws IOException {
-        // get first line of the request from the client
         String requestMethod = input.readLine();
+        show("Request Method", requestMethod);
         StringTokenizer parse = new StringTokenizer(requestMethod);
         String method = parse.nextToken().toUpperCase();
         String fileRequested = parse.nextToken().toLowerCase();
+        show("Request URL", fileRequested);
         return new Request(method, fileRequested);
     }
 
     private String getContentType(String fileRequested) {
+        show("Request Mime", fileRequested);
         return getMimeType(fileRequested);
     }
 
@@ -134,5 +138,9 @@ public class HttpProcessor implements Runnable {
                 fileIn.close();
         }
         return fileData;
+    }
+
+    private void show(String name, String value) {
+        System.out.println(name.concat(": ".concat(value)));
     }
 }

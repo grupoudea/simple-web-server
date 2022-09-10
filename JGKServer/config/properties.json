@@ -1,0 +1,7 @@
+{
+    "webRoot": "C:/JGKServer/httpages",
+    "defaultFile": "index.html",
+    "fileNotFound": "404.html",
+    "methodNotSupperted": "500.html",
+    "port": 8080
+}
