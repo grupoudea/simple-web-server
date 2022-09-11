@@ -1,26 +1,19 @@
 package com.udea.os;
 
-import com.udea.os.config.Properties;
-import com.udea.os.config.PropertiesManager;
-import com.udea.os.http.HttpProcessor;
-
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
+import com.udea.os.http.HttpServerRunner;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class Main {
-    private static final Properties properties = PropertiesManager.getPropertiesManager().getProperties();
+    private static final Logger LOGGER = LogManager.getLogger(Main.class);
+
 
     public static void main(String[] args) {
         try {
-            ServerSocket serverConnect = new ServerSocket(properties.getPort());
-            System.out.println("Server started.\nListening for connections on port : " + properties.getPort() + " ...\n");
-            do {
-                Socket connect = serverConnect.accept();
-                Thread thread = new Thread(new HttpProcessor(connect));
-                thread.start();
-            } while (!serverConnect.isClosed());
-        } catch (IOException e) {
+            LOGGER.info("Loading JGKServer");
+            HttpServerRunner httpServerRunner = new HttpServerRunner();
+            httpServerRunner.start();
+        } catch (Exception e) {
             System.err.println("Server Connection error : " + e.getMessage());
         }
     }

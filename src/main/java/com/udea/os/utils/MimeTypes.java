@@ -569,6 +569,7 @@ public class MimeTypes {
                 put(".xwd", "image/x-xwindowdump");
                 put(".z", "application/x-compress");
                 put(".zip", "application/x-zip-compressed");
+                put(".woff2", "font/woff2");
             }
         };
     }

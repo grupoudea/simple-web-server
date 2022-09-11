@@ -3,7 +3,7 @@
     "defaultFile": "index.html",
     "fileNotFound": "404.html",
     "methodNotSupperted": "500.html",
-    "port": 8080,
-    "maxThreadPool": 20,
-    "maxThreadQueue": 4
+    "port": 4300,
+    "maxThreadPool": 10,
+    "maxThreadQueue": 10
 }

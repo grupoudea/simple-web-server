@@ -26,9 +26,10 @@ public class PropertiesManager {
     }
 
     private static Properties readProperties() {
+        System.out.println("Server is reading the configuration...");
         Gson gson = new Gson();
         try {
-            return gson.fromJson(new FileReader("src/main/java/com/udea/os/config/properties.json"), Properties.class);
+            return gson.fromJson(new FileReader("JGKServer/config/properties.json"), Properties.class);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }

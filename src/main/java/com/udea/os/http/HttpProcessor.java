@@ -5,9 +5,14 @@ import com.udea.os.config.Properties;
 import com.udea.os.config.PropertiesManager;
 import com.udea.os.config.StatusCode;
 import com.udea.os.dto.Request;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Objects;
@@ -17,14 +22,26 @@ import static com.udea.os.utils.MimeTypes.getMimeType;
 
 public class HttpProcessor implements Runnable {
     private static final Properties properties = PropertiesManager.getPropertiesManager().getProperties();
+    private static final Logger LOGGER = LogManager.getLogger(HttpServerRunner.class);
+
     private final Socket connect;
 
     public HttpProcessor(Socket connect) {
         this.connect = connect;
     }
 
+    private void sleep(int millis){
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public void run() {
+        LOGGER.info("Started: "+Thread.currentThread().getName());
+
         BufferedReader input = null;
         PrintWriter out = null;
         BufferedOutputStream dataOut = null;
@@ -38,9 +55,14 @@ public class HttpProcessor implements Runnable {
             if (!request.getMethod().equals(Method.GET.name()) && !request.getMethod().equals(Method.HEAD.name())) {
                 serverError(out, dataOut);
             } else {
+                if(!request.getPath().endsWith("/")&&getContentType(request.getPath()).equals("application/octet-stream")){
+                    redirect(out, dataOut, request);
+                }
                 validatePath(request);
                 successResponse(out, dataOut, request);
             }
+            LOGGER.info("Ended: "+Thread.currentThread().getName());
+
         } catch (FileNotFoundException fnfe) {
             try {
                 badRequest(out, dataOut);
@@ -70,6 +92,17 @@ public class HttpProcessor implements Runnable {
             byte[] fileData = readFileData(file, fileLength);
             sendHttpHeaders(out, dataOut, fileLength, content, fileData, StatusCode.HTTP_200.getStatus());
         }
+    }
+
+    private void redirect(PrintWriter out, BufferedOutputStream dataOut, Request request) throws IOException{
+        out.println(StatusCode.HTTP_307.getStatus());
+        show("Status code", StatusCode.HTTP_307.getStatus());
+        out.println("Location: http://localhost:"+properties.getPort()+request.getPath()+"/");
+        out.println("Date: " + new Date());
+        show("Time", new Date().toString());
+        out.println();
+        out.flush();
+
     }
 
     private void badRequest(PrintWriter out, BufferedOutputStream dataOut) throws IOException {
@@ -105,12 +138,6 @@ public class HttpProcessor implements Runnable {
     private void validatePath(Request request) {
         if (request.getPath().endsWith("/")) {
             request.setPath(request.getPath().concat(properties.getDefaultFile()));
-        } else {
-            if (request.getBase().isEmpty()) {
-                request.setPath(request.getPath().concat("/").concat(properties.getDefaultFile()));
-            } else {
-                request.setPath(request.getBase().concat(request.getPath()));
-            }
         }
     }
 
@@ -126,17 +153,13 @@ public class HttpProcessor implements Runnable {
         }
         String request = requestBuilder.toString();
         String[] requestLines = request.split("\r\n");
-        String referer = Arrays.stream(requestLines).filter(c -> c.contains("Referer")).findFirst().orElse(null);
-        String base = "";
-        if (Objects.nonNull(referer)) {
-            base = referer.split("/")[3];
-        }
+
         show("Request Method", requestLines[0]);
         StringTokenizer parse = new StringTokenizer(requestLines[0]);
         String method = parse.nextToken().toUpperCase();
         String fileRequested = parse.nextToken().toLowerCase();
         show("Request URL", fileRequested);
-        return new Request(method, fileRequested, base);
+        return new Request(method, fileRequested);
     }
 
     private String getContentType(String fileRequested) {
@@ -159,7 +182,7 @@ public class HttpProcessor implements Runnable {
 
     private void show(String name, String value) {
         if (Objects.nonNull(value)) {
-            System.out.println(name.concat(": ".concat(value)));
+            //System.out.println(name.concat(": ".concat(value)));
         }
     }
 }

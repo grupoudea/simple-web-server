@@ -6,6 +6,8 @@ public class Properties {
     private String fileNotFound;
     private String methodNotSupperted;
     private Integer port;
+    private Integer maxThreadPool;
+    private Integer maxThreadQueue;
 
     public Properties() {
     }
@@ -48,5 +50,21 @@ public class Properties {
 
     public void setPort(Integer port) {
         this.port = port;
+    }
+
+    public Integer getMaxThreadPool() {
+        return maxThreadPool;
+    }
+
+    public void setMaxThreadPool(Integer maxThreadPool) {
+        this.maxThreadPool = maxThreadPool;
+    }
+
+    public Integer getMaxThreadQueue() {
+        return maxThreadQueue;
+    }
+
+    public void setMaxThreadQueue(Integer maxThreadQueue) {
+        this.maxThreadQueue = maxThreadQueue;
     }
 }

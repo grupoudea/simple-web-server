@@ -8,6 +8,11 @@ public class Request {
     public Request() {
     }
 
+    public Request(String method, String path) {
+        this.method = method;
+        this.path = path;
+    }
+
     public Request(String method, String path, String base) {
         this.method = method;
         this.path = path;
