@@ -39,6 +39,6 @@ out/
 ### VS Code ###
 .vscode/
 target/
-JGKServer/httpages/test1/
-JGKServer/httpages/web-site/
+httpages/test1/
+httpages/web-site/
 logs/

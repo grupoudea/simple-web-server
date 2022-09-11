@@ -10,10 +10,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.net.Socket;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Objects;
 import java.util.StringTokenizer;
@@ -28,14 +24,6 @@ public class HttpProcessor implements Runnable {
 
     public HttpProcessor(Socket connect) {
         this.connect = connect;
-    }
-
-    private void sleep(int millis){
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 
     @Override
@@ -56,7 +44,7 @@ public class HttpProcessor implements Runnable {
                 serverError(out, dataOut);
             } else {
                 if(!request.getPath().endsWith("/")&&getContentType(request.getPath()).equals("application/octet-stream")){
-                    redirect(out, dataOut, request);
+                    redirect(out, request);
                 }
                 validatePath(request);
                 successResponse(out, dataOut, request);
@@ -94,14 +82,9 @@ public class HttpProcessor implements Runnable {
         }
     }
 
-    private void redirect(PrintWriter out, BufferedOutputStream dataOut, Request request) throws IOException{
-        out.println(StatusCode.HTTP_307.getStatus());
-        show("Status code", StatusCode.HTTP_307.getStatus());
-        out.println("Location: http://localhost:"+properties.getPort()+request.getPath()+"/");
-        out.println("Date: " + new Date());
-        show("Time", new Date().toString());
-        out.println();
-        out.flush();
+    private void redirect(PrintWriter out , Request request) throws IOException{
+        String urlToRedirect = "http://localhost:"+properties.getPort()+request.getPath()+"/";
+        sendHttpHeadersRedirect(out, urlToRedirect);
 
     }
 
@@ -135,6 +118,16 @@ public class HttpProcessor implements Runnable {
         dataOut.flush();
     }
 
+    private void sendHttpHeadersRedirect(PrintWriter out, String urlToRedirect)  {
+        out.println(StatusCode.HTTP_307.getStatus());
+        show("Status code", StatusCode.HTTP_307.getStatus());
+        out.println("Location: "+urlToRedirect);
+        out.println("Date: " + new Date());
+        show("Time", new Date().toString());
+        out.println();
+        out.flush();
+    }
+
     private void validatePath(Request request) {
         if (request.getPath().endsWith("/")) {
             request.setPath(request.getPath().concat(properties.getDefaultFile()));
@@ -163,7 +156,6 @@ public class HttpProcessor implements Runnable {
     }
 
     private String getContentType(String fileRequested) {
-        show("Request Mime", fileRequested);
         return getMimeType(fileRequested);
     }
 
@@ -182,7 +174,7 @@ public class HttpProcessor implements Runnable {
 
     private void show(String name, String value) {
         if (Objects.nonNull(value)) {
-            //System.out.println(name.concat(": ".concat(value)));
+            LOGGER.info(name.concat(": ".concat(value)));
         }
     }
 }

@@ -7,7 +7,6 @@ public class Properties {
     private String methodNotSupperted;
     private Integer port;
     private Integer maxThreadPool;
-    private Integer maxThreadQueue;
 
     public Properties() {
     }
@@ -60,11 +59,4 @@ public class Properties {
         this.maxThreadPool = maxThreadPool;
     }
 
-    public Integer getMaxThreadQueue() {
-        return maxThreadQueue;
-    }
-
-    public void setMaxThreadQueue(Integer maxThreadQueue) {
-        this.maxThreadQueue = maxThreadQueue;
-    }
 }

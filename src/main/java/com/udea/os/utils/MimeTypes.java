@@ -451,7 +451,7 @@ public class MimeTypes {
                 put(".trx", "application/xml");
                 put(".ts", "video/vnd.dlna.mpeg-tts");
                 put(".tsv", "text/tab-separated-values");
-                put(".ttf", "application/octet-stream");
+                put(".ttf", "font/ttf");
                 put(".tts", "video/vnd.dlna.mpeg-tts");
                 put(".txt", "text/plain");
                 put(".u32", "application/octet-stream");
@@ -570,6 +570,7 @@ public class MimeTypes {
                 put(".z", "application/x-compress");
                 put(".zip", "application/x-zip-compressed");
                 put(".woff2", "font/woff2");
+                put(".woff", "font/woff");
             }
         };
     }

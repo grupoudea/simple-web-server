@@ -1,9 +1,8 @@
 {
-    "webRoot": "JGKServer/httpages",
+    "webRoot": "httpages",
     "defaultFile": "index.html",
     "fileNotFound": "404.html",
     "methodNotSupperted": "500.html",
-    "port": 4300,
-    "maxThreadPool": 10,
-    "maxThreadQueue": 10
+    "port": 8080,
+    "maxThreadPool": 20
 }
