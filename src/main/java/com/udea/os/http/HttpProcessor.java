@@ -9,8 +9,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.Socket;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.Objects;
 import java.util.StringTokenizer;
 
@@ -55,18 +58,19 @@ public class HttpProcessor implements Runnable {
             try {
                 badRequest(out, dataOut);
             } catch (IOException ioe) {
-                System.err.println("Error with file not found exception : " + ioe.getMessage());
+                LOGGER.error("Error with file not found exception : " + ioe.getMessage());
             }
-        } catch (IOException ioe) {
-            System.err.println("Server error : " + ioe);
+        } catch (Exception e) {
+            LOGGER.error("Server error : " + e.getMessage());
         } finally {
             try {
                 input.close();
                 out.close();
                 dataOut.close();
                 connect.close();
+                LOGGER.info("Connections have been finished with success.");
             } catch (Exception e) {
-                System.err.println("Error closing stream : " + e.getMessage());
+                LOGGER.error("Error closing stream : " + e.getMessage());
             }
             System.out.println("\n");
         }
@@ -83,7 +87,14 @@ public class HttpProcessor implements Runnable {
     }
 
     private void redirect(PrintWriter out , Request request) throws IOException{
-        String urlToRedirect = "http://localhost:"+properties.getPort()+request.getPath()+"/";
+        LOGGER.info("ip: "+InetAddress.getLocalHost());
+        String ipToRedirect = this.connect.getLocalAddress().getHostAddress();
+        if(this.connect.getInetAddress().getHostAddress().contains("0:0:0:0:0:0:0:1")){
+            ipToRedirect = "localhost";
+        }
+
+        String urlToRedirect = "http://"+ipToRedirect+":"+properties.getPort()+request.getPath()+"/";
+        show("redirect to",urlToRedirect);
         sendHttpHeadersRedirect(out, urlToRedirect);
 
     }
@@ -174,7 +185,7 @@ public class HttpProcessor implements Runnable {
 
     private void show(String name, String value) {
         if (Objects.nonNull(value)) {
-            LOGGER.info(name.concat(": ".concat(value)));
+            LOGGER.info(this.connect.getInetAddress().getHostAddress()+":"+this.connect.getPort()+" requested "+name.concat(": ".concat(value)));
         }
     }
 }

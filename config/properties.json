@@ -4,5 +4,5 @@
     "fileNotFound": "404.html",
     "methodNotSupperted": "500.html",
     "port": 8080,
-    "maxThreadPool": 20
+    "maxThreadPool": 100
 }
