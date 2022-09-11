@@ -8,7 +8,9 @@ import com.udea.os.dto.Request;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.Objects;
 import java.util.StringTokenizer;
 
 import static com.udea.os.utils.MimeTypes.getMimeType;
@@ -104,7 +106,11 @@ public class HttpProcessor implements Runnable {
         if (request.getPath().endsWith("/")) {
             request.setPath(request.getPath().concat(properties.getDefaultFile()));
         } else {
-            show("Incorrect path", request.getPath());
+            if (request.getBase().isEmpty()) {
+                request.setPath(request.getPath().concat("/").concat(properties.getDefaultFile()));
+            } else {
+                request.setPath(request.getBase().concat(request.getPath()));
+            }
         }
     }
 
@@ -113,13 +119,24 @@ public class HttpProcessor implements Runnable {
     }
 
     private Request getRequest(BufferedReader input) throws IOException {
-        String requestMethod = input.readLine();
-        show("Request Method", requestMethod);
-        StringTokenizer parse = new StringTokenizer(requestMethod);
+        StringBuilder requestBuilder = new StringBuilder();
+        String line;
+        while (!(line = input.readLine()).isEmpty()) {
+            requestBuilder.append(line + "\r\n");
+        }
+        String request = requestBuilder.toString();
+        String[] requestLines = request.split("\r\n");
+        String referer = Arrays.stream(requestLines).filter(c -> c.contains("Referer")).findFirst().orElse(null);
+        String base = "";
+        if (Objects.nonNull(referer)) {
+            base = referer.split("/")[3];
+        }
+        show("Request Method", requestLines[0]);
+        StringTokenizer parse = new StringTokenizer(requestLines[0]);
         String method = parse.nextToken().toUpperCase();
         String fileRequested = parse.nextToken().toLowerCase();
         show("Request URL", fileRequested);
-        return new Request(method, fileRequested);
+        return new Request(method, fileRequested, base);
     }
 
     private String getContentType(String fileRequested) {
@@ -141,6 +158,8 @@ public class HttpProcessor implements Runnable {
     }
 
     private void show(String name, String value) {
-        System.out.println(name.concat(": ".concat(value)));
+        if (Objects.nonNull(value)) {
+            System.out.println(name.concat(": ".concat(value)));
+        }
     }
 }
