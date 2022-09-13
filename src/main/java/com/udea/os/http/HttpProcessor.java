@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
 import java.util.Date;
@@ -86,14 +87,8 @@ public class HttpProcessor implements Runnable {
         }
     }
 
-    private void redirect(PrintWriter out , Request request) throws IOException{
-        LOGGER.info("ip: "+InetAddress.getLocalHost());
-        String ipToRedirect = this.connect.getLocalAddress().getHostAddress();
-        if(this.connect.getInetAddress().getHostAddress().contains("0:0:0:0:0:0:0:1")){
-            ipToRedirect = "localhost";
-        }
-
-        String urlToRedirect = "http://"+ipToRedirect+":"+properties.getPort()+request.getPath()+"/";
+    private void redirect(PrintWriter out , Request request) {
+        String urlToRedirect = "http://"+request.getHost()+":"+properties.getPort()+request.getPath()+"/";
         show("redirect to",urlToRedirect);
         sendHttpHeadersRedirect(out, urlToRedirect);
 
@@ -152,18 +147,25 @@ public class HttpProcessor implements Runnable {
     private Request getRequest(BufferedReader input) throws IOException {
         StringBuilder requestBuilder = new StringBuilder();
         String line;
+        String hostPart = "";
         while (!(line = input.readLine()).isEmpty()) {
+            if(line.contains("Host: ")){
+                hostPart = line;
+            }
             requestBuilder.append(line + "\r\n");
         }
+        hostPart = hostPart.split(" ")[1].split(":")[0];
         String request = requestBuilder.toString();
         String[] requestLines = request.split("\r\n");
 
         show("Request Method", requestLines[0]);
+        show("Destination ", hostPart);
         StringTokenizer parse = new StringTokenizer(requestLines[0]);
+
         String method = parse.nextToken().toUpperCase();
         String fileRequested = parse.nextToken().toLowerCase();
         show("Request URL", fileRequested);
-        return new Request(method, fileRequested);
+        return new Request(method, fileRequested, hostPart);
     }
 
     private String getContentType(String fileRequested) {

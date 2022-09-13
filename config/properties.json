@@ -3,6 +3,6 @@
     "defaultFile": "index.html",
     "fileNotFound": "404.html",
     "methodNotSupperted": "500.html",
-    "port": 8080,
+    "port": 8083,
     "maxThreadPool": 100
 }

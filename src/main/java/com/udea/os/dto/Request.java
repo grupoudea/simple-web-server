@@ -3,7 +3,7 @@ package com.udea.os.dto;
 public class Request {
     private String method;
     private String path;
-    private String base;
+    private String host;
 
     public Request() {
     }
@@ -13,10 +13,10 @@ public class Request {
         this.path = path;
     }
 
-    public Request(String method, String path, String base) {
+    public Request(String method, String path, String host) {
         this.method = method;
         this.path = path;
-        this.base = base;
+        this.host = host;
     }
 
     public String getMethod() {
@@ -35,11 +35,11 @@ public class Request {
         this.path = path;
     }
 
-    public String getBase() {
-        return base;
+    public String getHost() {
+        return host;
     }
 
-    public void setBase(String base) {
-        this.base = base;
+    public void setHost(String host) {
+        this.host = host;
     }
 }

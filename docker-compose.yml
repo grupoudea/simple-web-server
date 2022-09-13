@@ -1,0 +1,12 @@
+version: "3.9"
+services:
+  jgkserver:
+    build: .
+    image: jgkserver_i:latest
+    container_name: jgkserver_web_con
+    ports:
+      - "8083:8083"
+    volumes:
+    - ./httpages:/opt/jgkserver/httpages
+    - ./config/properties.json:/opt/jgkserver/config/properties.json
+    - ./logs:/opt/jgkserver/logs
