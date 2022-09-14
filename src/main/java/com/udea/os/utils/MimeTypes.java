@@ -428,7 +428,7 @@ public class MimeTypes {
                 put(".sv4cpio", "application/x-sv4cpio");
                 put(".sv4crc", "application/x-sv4crc");
                 put(".svc", "application/xml");
-                put(".svg","image/svg+xml");
+                put(".svg", "image/svg+xml");
                 put(".swf", "application/x-shockwave-flash");
                 put(".t", "application/x-troff");
                 put(".tar", "application/x-tar");
@@ -451,7 +451,7 @@ public class MimeTypes {
                 put(".trx", "application/xml");
                 put(".ts", "video/vnd.dlna.mpeg-tts");
                 put(".tsv", "text/tab-separated-values");
-                put(".ttf", "application/octet-stream");
+                put(".ttf", "font/ttf");
                 put(".tts", "video/vnd.dlna.mpeg-tts");
                 put(".txt", "text/plain");
                 put(".u32", "application/octet-stream");
@@ -569,6 +569,8 @@ public class MimeTypes {
                 put(".xwd", "image/x-xwindowdump");
                 put(".z", "application/x-compress");
                 put(".zip", "application/x-zip-compressed");
+                put(".woff2", "font/woff2");
+                put(".woff", "font/woff");
             }
         };
     }
@@ -577,24 +579,20 @@ public class MimeTypes {
         if (extension == null) {
             return null;
         }
-        StringBuilder extentionBuilder = new StringBuilder();
         String poExten = "";
-        for (int i = (extension.length()-1); i >=0 ; i--) {
-            if(extension.charAt(i)!='.'){
-                poExten =  extension.charAt(i)+poExten;
+        for (int i = (extension.length() - 1); i >= 0; i--) {
+            if (extension.charAt(i) != '.') {
+                poExten = extension.charAt(i) + poExten;
             }
-            if(extension.charAt(i)=='.'){
+            if (extension.charAt(i) == '.') {
                 break;
             }
         }
-        String extension2 ="";
-        if(!poExten.startsWith(".")){
-            extension2 =  "."+poExten;
+        String extension2 = "";
+        if (!poExten.startsWith(".")) {
+            extension2 = "." + poExten;
         }
-
         String mime = mimeTypes.get(extension2);
-
         return mime != null ? mime : "application/octet-stream";
     }
 }
-

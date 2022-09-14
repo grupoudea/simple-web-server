@@ -38,3 +38,7 @@ out/
 
 ### VS Code ###
 .vscode/
+target/
+httpages/test1/
+httpages/web-site/
+logs/
